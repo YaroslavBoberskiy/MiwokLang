@@ -1,22 +1,26 @@
 package com.example.android.miwok;
 
 import android.media.MediaPlayer;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
 public class ColorsActivity extends AppCompatActivity {
 
-    private MediaPlayer mediaPlayer;
+    private MediaPlayer mediaPlayer = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_colors);
+
+        releaseMediaPlayer();
 
         final ArrayList<ListItemContent> colorsListItemContents = new ArrayList<ListItemContent>();
 
@@ -35,14 +39,27 @@ public class ColorsActivity extends AppCompatActivity {
 
         colorsListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+            public void onItemClick(AdapterView<?> adapterView, final View view, int i, long l) {
                 int soundResId = colorsListItemContents.get(i).getSoundResId();
                 mediaPlayer = MediaPlayer.create(view.getContext(), soundResId);
                 mediaPlayer.start();
+                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mediaPlayer) {
+                        releaseMediaPlayer();
+                    }
+                });
             }
         });
 
         colorsListView.setAdapter(colorsItemsAdapter);
 
+    }
+
+    public void releaseMediaPlayer () {
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
     }
 }

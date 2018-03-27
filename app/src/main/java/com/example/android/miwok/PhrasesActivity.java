@@ -18,6 +18,8 @@ public class PhrasesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_phrases);
 
+        releaseMediaPlayer();
+
         final ArrayList<ListItemContent> phrasesListItemContents = new ArrayList<ListItemContent>();
 
         phrasesListItemContents.add(new ListItemContent("Where are you going?", "minto wuksus", R.raw.phrase_where_are_you_going));
@@ -41,10 +43,23 @@ public class PhrasesActivity extends AppCompatActivity {
                 int soundResId = phrasesListItemContents.get(i).getSoundResId();
                 mediaPlayer = MediaPlayer.create(view.getContext(), soundResId);
                 mediaPlayer.start();
+                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mediaPlayer) {
+                        releaseMediaPlayer();
+                    }
+                });
             }
         });
 
         familyListViev.setAdapter(phrasesWordsAdapter);
 
+    }
+
+    public void releaseMediaPlayer () {
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
     }
 }

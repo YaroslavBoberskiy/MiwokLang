@@ -18,6 +18,8 @@ public class FamilyMembersActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_family_members);
 
+        releaseMediaPlayer();
+
         final ArrayList<ListItemContent> familyListItemContents = new ArrayList<ListItemContent>();
 
         familyListItemContents.add(new ListItemContent("father", "әpә", R.drawable.family_father, R.raw.family_father));
@@ -42,10 +44,23 @@ public class FamilyMembersActivity extends AppCompatActivity {
                 int soundResId = familyListItemContents.get(i).getSoundResId();
                 mediaPlayer = MediaPlayer.create(view.getContext(), soundResId);
                 mediaPlayer.start();
+                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mediaPlayer) {
+                        releaseMediaPlayer();
+                    }
+                });
             }
         });
 
         familyListViev.setAdapter(familyWordsAdapter);
 
+    }
+
+    public void releaseMediaPlayer () {
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
     }
 }

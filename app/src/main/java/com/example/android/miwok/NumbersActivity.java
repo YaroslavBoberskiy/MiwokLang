@@ -18,6 +18,8 @@ public class NumbersActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_numbers);
 
+        releaseMediaPlayer();
+
         final ArrayList<ListItemContent> numbersListItemContents = new ArrayList<ListItemContent>();
 
         numbersListItemContents.add(new ListItemContent("one", "lutti", R.drawable.number_one, R.raw.number_one));
@@ -42,10 +44,23 @@ public class NumbersActivity extends AppCompatActivity {
                 int soundResId = numbersListItemContents.get(i).getSoundResId();
                 mediaPlayer = MediaPlayer.create(view.getContext(), soundResId);
                 mediaPlayer.start();
+                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mediaPlayer) {
+                        releaseMediaPlayer();
+                    }
+                });
             }
         });
 
         numbersListView.setAdapter(numbersItemsAdapter);
 
+    }
+
+    public void releaseMediaPlayer () {
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
     }
 }
