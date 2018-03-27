@@ -46,4 +46,14 @@ public class ListItemContent {
     public int getSoundResId() {
         return soundResId;
     }
+
+    @Override
+    public String toString() {
+        return "ListItemContent{" +
+                "miwokWord='" + miwokWord + '\'' +
+                ", translatedWord='" + translatedWord + '\'' +
+                ", imageId=" + imageId +
+                ", soundResId=" + soundResId +
+                '}';
+    }
 }
