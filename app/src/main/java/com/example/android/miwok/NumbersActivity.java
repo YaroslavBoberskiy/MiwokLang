@@ -1,5 +1,7 @@
 package com.example.android.miwok;
 
+import android.content.Context;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -12,13 +14,13 @@ import java.util.ArrayList;
 public class NumbersActivity extends AppCompatActivity {
 
     private MediaPlayer mediaPlayer;
+    private AudioManager audioManager;
+    AudioManager.OnAudioFocusChangeListener audioFocusChangeListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_numbers);
-
-        releaseMediaPlayer();
 
         final ArrayList<ListItemContent> numbersListItemContents = new ArrayList<ListItemContent>();
 
@@ -53,14 +55,54 @@ public class NumbersActivity extends AppCompatActivity {
             }
         });
 
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
+        audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+
+        audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+            @Override
+            public void onAudioFocusChange(int focusChange) {
+                switch (focusChange) {
+                    case AudioManager.AUDIOFOCUS_LOSS:
+                        mediaPlayer.pause();
+                        break;
+                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                        mediaPlayer.pause();
+                        break;
+                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+//                        mediaPlayer.setVolume(0.5f, 0.5f);
+                        mediaPlayer.pause();
+                        break;
+                    case AudioManager.AUDIOFOCUS_GAIN:
+                        if (!mediaPlayer.isPlaying())
+                            mediaPlayer.start();
+                        break;
+                }
+            }
+        };
+
         numbersListView.setAdapter(numbersItemsAdapter);
 
     }
 
-    public void releaseMediaPlayer () {
+    @Override
+    protected void onStop() {
+        super.onStop();
+        releaseMediaPlayer();
+        releaseAudioFocus();
+    }
+
+    public void releaseMediaPlayer() {
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
+        }
+    }
+
+    public void releaseAudioFocus() {
+        if (audioManager != null) {
+            audioManager.abandonAudioFocus(audioFocusChangeListener);
+            audioManager = null;
         }
     }
 }
