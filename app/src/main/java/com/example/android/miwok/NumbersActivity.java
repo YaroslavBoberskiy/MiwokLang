@@ -40,38 +40,48 @@ public class NumbersActivity extends AppCompatActivity {
 
         ListView numbersListView = (ListView) findViewById(R.id.numbersListView);
 
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
         numbersListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 int soundResId = numbersListItemContents.get(i).getSoundResId();
-                mediaPlayer = MediaPlayer.create(view.getContext(), soundResId);
-                mediaPlayer.start();
-                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                    @Override
-                    public void onCompletion(MediaPlayer mediaPlayer) {
-                        releaseMediaPlayer();
-                    }
-                });
+
+                releaseMediaPlayer();
+
+                int audioFocusResult = audioManager.requestAudioFocus(
+                        audioFocusChangeListener,
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+
+                if (audioFocusResult == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                    mediaPlayer = MediaPlayer.create(view.getContext(), soundResId);
+                    mediaPlayer.start();
+                    mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                        @Override
+                        public void onCompletion(MediaPlayer mediaPlayer) {
+                            releaseMediaPlayer();
+                        }
+                    });
+                }
             }
         });
-
-        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-
-        audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
 
         audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
             @Override
             public void onAudioFocusChange(int focusChange) {
                 switch (focusChange) {
                     case AudioManager.AUDIOFOCUS_LOSS:
-                        mediaPlayer.pause();
+                        releaseMediaPlayer();
                         break;
                     case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                         mediaPlayer.pause();
+                        mediaPlayer.seekTo(0);
                         break;
                     case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
 //                        mediaPlayer.setVolume(0.5f, 0.5f);
                         mediaPlayer.pause();
+                        mediaPlayer.seekTo(0);
                         break;
                     case AudioManager.AUDIOFOCUS_GAIN:
                         if (!mediaPlayer.isPlaying())
@@ -89,20 +99,13 @@ public class NumbersActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         releaseMediaPlayer();
-        releaseAudioFocus();
     }
 
     public void releaseMediaPlayer() {
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
-        }
-    }
-
-    public void releaseAudioFocus() {
-        if (audioManager != null) {
             audioManager.abandonAudioFocus(audioFocusChangeListener);
-            audioManager = null;
         }
     }
 }

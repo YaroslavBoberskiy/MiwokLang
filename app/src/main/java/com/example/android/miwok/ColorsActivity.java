@@ -1,5 +1,7 @@
 package com.example.android.miwok;
 
+import android.content.Context;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -13,7 +15,9 @@ import java.util.ArrayList;
 
 public class ColorsActivity extends AppCompatActivity {
 
-    private MediaPlayer mediaPlayer = null;
+    private MediaPlayer mediaPlayer;
+    private AudioManager audioManager;
+    AudioManager.OnAudioFocusChangeListener audioFocusChangeListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,29 +41,72 @@ public class ColorsActivity extends AppCompatActivity {
 
         ListView colorsListView = (ListView) findViewById(R.id.colorsListView);
 
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
         colorsListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, final View view, int i, long l) {
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 int soundResId = colorsListItemContents.get(i).getSoundResId();
-                mediaPlayer = MediaPlayer.create(view.getContext(), soundResId);
-                mediaPlayer.start();
-                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                    @Override
-                    public void onCompletion(MediaPlayer mediaPlayer) {
-                        releaseMediaPlayer();
-                    }
-                });
+
+                releaseMediaPlayer();
+
+                int audioFocusResult = audioManager.requestAudioFocus(
+                        audioFocusChangeListener,
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+
+                if (audioFocusResult == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                    mediaPlayer = MediaPlayer.create(view.getContext(), soundResId);
+                    mediaPlayer.start();
+                    mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                        @Override
+                        public void onCompletion(MediaPlayer mediaPlayer) {
+                            releaseMediaPlayer();
+                        }
+                    });
+                }
             }
         });
+
+        audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+            @Override
+            public void onAudioFocusChange(int focusChange) {
+                switch (focusChange) {
+                    case AudioManager.AUDIOFOCUS_LOSS:
+                        releaseMediaPlayer();
+                        break;
+                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                        mediaPlayer.pause();
+                        mediaPlayer.seekTo(0);
+                        break;
+                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+//                        mediaPlayer.setVolume(0.5f, 0.5f);
+                        mediaPlayer.pause();
+                        mediaPlayer.seekTo(0);
+                        break;
+                    case AudioManager.AUDIOFOCUS_GAIN:
+                        if (!mediaPlayer.isPlaying())
+                            mediaPlayer.start();
+                        break;
+                }
+            }
+        };
 
         colorsListView.setAdapter(colorsItemsAdapter);
 
     }
 
-    public void releaseMediaPlayer () {
+    @Override
+    protected void onStop() {
+        super.onStop();
+        releaseMediaPlayer();
+    }
+
+    public void releaseMediaPlayer() {
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
+            audioManager.abandonAudioFocus(audioFocusChangeListener);
         }
     }
 }
